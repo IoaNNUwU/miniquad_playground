@@ -17,18 +17,22 @@ async fn main() {
     loop {
         clear_background(LIGHTGRAY);
 
-        set_camera(&Camera3D {
-            position: vec3(10.0, 10.0, 10.0),
+        let camera = Camera3D {
+            position: vec3(0.0, 0.4, 5.0),
             target: vec3(0.0, 0.0, 0.0),
+            up: Vec3::Y,
             ..Default::default()
-        });
+        };
+
+        set_camera(&camera);
 
         draw_cube_wires(vec3(0.0, 0.0, 0.0), vec3(1.0, 1.0, 1.0), macroquad::prelude::BLACK);
+
+        draw_grid(10, 1.0, MAGENTA, DARKBLUE);
 
         {
             let mut gl = unsafe { get_internal_gl() };
 
-            // Ensure that macroquad's shapes are not going to be lost
             gl.flush();
             
             gl.quad_context.texture_set_filter(
@@ -43,7 +47,12 @@ async fn main() {
 
             gl.quad_context.begin_default_pass(miniquad::PassAction::Nothing);
 
-            gl.quad_context.apply_uniforms(UniformsSource::table(&WHITE));
+            let matrix = gl.quad_gl.get_projection_matrix();
+
+            gl.quad_context.apply_uniforms(UniformsSource::table(&Uniforms { 
+                mat: matrix,
+                color: myvec3(1.0, 0.0, 0.0),
+            }));
 
             gl.quad_context.draw(0, 3, 1);
 
@@ -54,6 +63,12 @@ async fn main() {
 
         next_frame().await
     }
+}
+
+#[repr(C)]
+struct Uniforms {
+    mat: Mat4,
+    color: MyVec3,
 }
 
 #[repr(C)]
@@ -131,11 +146,17 @@ fn make_pipelone_and_bindings(ctx: &mut dyn RenderingBackend) -> (Pipeline, Bind
             },
             ShaderMeta { 
                 uniforms: UniformBlockLayout { 
-                    uniforms: vec![UniformDesc { 
-                        name: "triangle_color".to_string(),
-                        uniform_type: UniformType::Float3,
-                        array_count: 1,
-                    }
+                    uniforms: vec![
+                        UniformDesc {
+                            name: "camera_projection".to_string(),
+                            uniform_type: UniformType::Mat4,
+                            array_count: 1,
+                        },
+                        UniformDesc {
+                            name: "triangle_color".to_string(),
+                            uniform_type: UniformType::Float3,
+                            array_count: 1,
+                        },
                     ] 
                 }, 
                 images: vec![] 
@@ -164,9 +185,11 @@ pub const VERTEX: &str = r#"
 
 layout (location = 0) in vec3 in_pos;
 
+uniform mat4 camera_projection;
+
 void main()
 {
-    gl_Position = vec4(in_pos, 1.0);
+    gl_Position = vec4(in_pos, 1.0) * camera_projection;
 }
 "#;
 

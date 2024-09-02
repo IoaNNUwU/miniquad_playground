@@ -7,6 +7,3 @@ default-run = "miniquad_playground"
 
 [dependencies]
 macroquad = "0.4.13"
-
-[[default-run]]
-name = "miniquad_playground"
