@@ -1,0 +1,12 @@
+[package]
+name = "miniquad_playground"
+version = "0.1.0"
+edition = "2021"
+
+default-run = "miniquad_playground"
+
+[dependencies]
+macroquad = "0.4.13"
+
+[[default-run]]
+name = "miniquad_playground"
