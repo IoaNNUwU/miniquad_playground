@@ -14,11 +14,23 @@ async fn main() {
         make_pipelone_and_bindings(ctx)
     };
 
+    let mut pos = vec3(1.0, 0.4, 5.0);
+
     loop {
         clear_background(LIGHTGRAY);
 
+        if is_key_pressed(KeyCode::Y) {
+            if !is_key_down(KeyCode::LeftShift) { pos.y += 1.0 } else { pos.y -= 1.0 }
+        }
+        if is_key_pressed(KeyCode::Z) {
+            if !is_key_down(KeyCode::LeftShift) { pos.z += 1.0 } else { pos.z -= 1.0 }
+        }
+        if is_key_pressed(KeyCode::X) {
+            if !is_key_down(KeyCode::LeftShift) { pos.x += 1.0 } else { pos.x -= 1.0 }
+        }
+
         let camera = Camera3D {
-            position: vec3(0.0, 0.4, 5.0),
+            position: pos,
             target: vec3(0.0, 0.0, 0.0),
             up: Vec3::Y,
             ..Default::default()
@@ -28,7 +40,7 @@ async fn main() {
 
         draw_cube_wires(vec3(0.0, 0.0, 0.0), vec3(1.0, 1.0, 1.0), macroquad::prelude::BLACK);
 
-        draw_grid(10, 1.0, MAGENTA, DARKBLUE);
+        draw_grid(20, 1.0, MAGENTA, DARKBLUE);
 
         {
             let mut gl = unsafe { get_internal_gl() };
@@ -49,10 +61,9 @@ async fn main() {
 
             let matrix = gl.quad_gl.get_projection_matrix();
 
-            gl.quad_context.apply_uniforms(UniformsSource::table(&Uniforms { 
-                mat: matrix,
-                color: myvec3(1.0, 0.0, 0.0),
-            }));
+            let color = vec3(1.0, 0.3, 0.5);
+
+            gl.quad_context.apply_uniforms(UniformsSource::table(&Uniforms { mat: matrix, color }));
 
             gl.quad_context.draw(0, 3, 1);
 
@@ -68,52 +79,31 @@ async fn main() {
 #[repr(C)]
 struct Uniforms {
     mat: Mat4,
-    color: MyVec3,
-}
-
-#[repr(C)]
-struct MyVec2 {
-    x: f32,
-    y: f32,
-}
-
-const fn myvec2(x: f32, y: f32) -> MyVec2 {
-    MyVec2 { x, y }
-}
-
-#[repr(C)]
-struct MyVec3 {
-    x: f32,
-    y: f32,
-    z: f32,
-}
-
-const fn myvec3(x: f32, y: f32, z: f32) -> MyVec3 {
-    MyVec3 { x, y, z }
+    color: Vec3,
 }
 
 #[repr(C)]
 struct MyVertex {
-    pos: MyVec3,
+    pos: Vec3,
 }
 
-const WHITE: MyVec3 = myvec3(1.0, 1.0, 1.0);
-const RED:   MyVec3 = myvec3(1.0, 0.0, 0.0);
-const GREEN: MyVec3 = myvec3(0.0, 1.0, 0.0);
-const BLUE:  MyVec3 = myvec3(0.0, 0.0, 1.0);
-const BLACK: MyVec3 = myvec3(0.0, 0.0, 0.0);
+const WHITE: Vec3 = vec3(1.0, 1.0, 1.0);
+const RED:   Vec3 = vec3(1.0, 0.0, 0.0);
+const GREEN: Vec3 = vec3(0.0, 1.0, 0.0);
+const BLUE:  Vec3 = vec3(0.0, 0.0, 1.0);
+const BLACK: Vec3 = vec3(0.0, 0.0, 0.0);
 
 fn myvertex(x: f32, y: f32, z: f32) -> MyVertex {
-    MyVertex { pos: myvec3(x, y, z) }
+    MyVertex { pos: vec3(x, y, z) }
 }
 
 fn make_pipelone_and_bindings(ctx: &mut dyn RenderingBackend) -> (Pipeline, Bindings) {
 
     #[rustfmt::skip]
     let vertices = [
-        myvertex(-0.5, -0.5,-0.5),
-        myvertex( 0.5,  0.5, 0.5),
-        myvertex( 0.5, -0.5, 0.5),
+        myvertex(-0.5, -0.5, 0.0),
+        myvertex( 0.5,  0.5, 0.0),
+        myvertex( 0.5, -0.5, 0.0),
     ];
 
     let vertex_buffer = ctx.new_buffer(
